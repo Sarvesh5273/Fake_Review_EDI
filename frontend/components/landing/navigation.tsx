@@ -2,17 +2,26 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const navLinks = [
   { name: "Home", href: "#" },
   { name: "Pricing", href: "#pricing" },
-  { name: "Dashboard", href: "/dashboard" },
 ];
 
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isAuthenticated, user, logout } = useAuth();
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +30,14 @@ export function Navigation() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+    setIsMobileMenuOpen(false);
+  };
+
+  if (!mounted) return null;
 
   return (
     <header
@@ -43,14 +60,14 @@ export function Navigation() {
           }`}
         >
           {/* Logo */}
-          <a href="#" className="flex items-center gap-2 group">
+          <a href="/" className="flex items-center gap-2 group">
             <span className={`font-display tracking-tight transition-all duration-500 ${isScrolled ? "text-xl text-foreground" : "text-2xl text-white"}`}>VERTEXSHIELD</span>
             <span className={`font-mono transition-all duration-500 ${isScrolled ? "text-[10px] mt-0.5 text-muted-foreground" : "text-xs mt-1 text-white/60"}`}>TM</span>
           </a>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-12">
-            {navLinks.map((link) => (
+            {!isAuthenticated && navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
@@ -60,17 +77,52 @@ export function Navigation() {
                 <span className={`absolute -bottom-1 left-0 w-0 h-px transition-all duration-300 group-hover:w-full ${isScrolled ? "bg-foreground" : "bg-white"}`} />
               </a>
             ))}
+            {isAuthenticated && (
+              <Link
+                href="/dashboard"
+                className={`text-sm transition-colors duration-300 relative group ${isScrolled ? "text-foreground/70 hover:text-foreground" : "text-white/70 hover:text-white"}`}
+              >
+                Dashboard
+                <span className={`absolute -bottom-1 left-0 w-0 h-px transition-all duration-300 group-hover:w-full ${isScrolled ? "bg-foreground" : "bg-white"}`} />
+              </Link>
+            )}
           </div>
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <Button
-              asChild
-              size="sm"
-              className={`rounded-full transition-all duration-500 ${isScrolled ? "bg-foreground hover:bg-foreground/90 text-background px-4 h-8 text-xs" : "bg-white hover:bg-white/90 text-black px-6"}`}
-            >
-              <a href="/dashboard">Dashboard</a>
-            </Button>
+            {isAuthenticated ? (
+              <div className="flex items-center gap-4">
+                <span className={`text-sm ${isScrolled ? "text-foreground/70" : "text-white/70"}`}>
+                  {user?.name || user?.email}
+                </span>
+                <Button
+                  onClick={handleLogout}
+                  size="sm"
+                  variant="ghost"
+                  className={`rounded-full transition-all duration-500 ${isScrolled ? "text-foreground hover:bg-foreground/10" : "text-white hover:bg-white/10"}`}
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className={`rounded-full transition-all duration-500 ${isScrolled ? "text-foreground hover:bg-foreground/10" : "text-white hover:bg-white/10"}`}
+                >
+                  <a href="/login">Login</a>
+                </Button>
+                <Button
+                  asChild
+                  size="sm"
+                  className={`rounded-full transition-all duration-500 ${isScrolled ? "bg-foreground hover:bg-foreground/90 text-background px-4 h-8 text-xs" : "bg-white hover:bg-white/90 text-black px-6"}`}
+                >
+                  <a href="/signup">Sign Up</a>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -101,7 +153,7 @@ export function Navigation() {
         <div className="flex flex-col h-full px-8 pt-28 pb-8">
           {/* Navigation Links */}
           <div className="flex-1 flex flex-col justify-center gap-8">
-            {navLinks.map((link, i) => (
+            {!isAuthenticated && navLinks.map((link, i) => (
               <a
                 key={link.name}
                 href={link.href}
@@ -116,23 +168,53 @@ export function Navigation() {
                 {link.name}
               </a>
             ))}
+            {isAuthenticated && (
+              <Link
+                href="/dashboard"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`text-5xl font-display text-foreground hover:text-muted-foreground transition-all duration-500 ${
+                  isMobileMenuOpen 
+                    ? "opacity-100 translate-y-0" 
+                    : "opacity-0 translate-y-4"
+                }`}
+              >
+                Dashboard
+              </Link>
+            )}
           </div>
           
           {/* Bottom CTAs */}
-          <div className={`flex pt-8 border-t border-foreground/10 transition-all duration-500 ${
+          <div className={`flex flex-col gap-3 pt-8 border-t border-foreground/10 transition-all duration-500 ${
             isMobileMenuOpen 
               ? "opacity-100 translate-y-0" 
               : "opacity-0 translate-y-4"
           }`}
           style={{ transitionDelay: isMobileMenuOpen ? "300ms" : "0ms" }}
           >
-            <Button 
-              asChild
-              className="flex-1 bg-foreground text-background rounded-full h-14 text-base"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <a href="/dashboard">Dashboard</a>
-            </Button>
+            {isAuthenticated ? (
+              <Button 
+                onClick={handleLogout}
+                className="w-full bg-foreground text-background rounded-full h-12 text-base hover:bg-foreground/90"
+              >
+                Logout
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  asChild
+                  variant="outline"
+                  className="w-full text-foreground rounded-full h-12 text-base border-foreground/20 hover:bg-foreground/5"
+                >
+                  <a href="/login">Login</a>
+                </Button>
+                <Button 
+                  asChild
+                  className="w-full bg-foreground text-background rounded-full h-12 text-base hover:bg-foreground/90"
+                >
+                  <a href="/signup">Sign Up</a>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

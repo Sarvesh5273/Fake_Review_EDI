@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { ShieldCheck, AlertTriangle, Search, Activity, Database, DollarSign, Download, ArrowRight } from "lucide-react";
+import { ShieldCheck, AlertTriangle, Search, Activity, Database, DollarSign, Download, ArrowRight, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,12 +11,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { ProtectedRoute } from "@/components/protected-route";
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [targetNode, setTargetNode] = useState<string>("104");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<{ probability: number; status: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { user, logout } = useAuth();
+  const router = useRouter();
 
   const handleInference = async () => {
     setIsAnalyzing(true);
@@ -44,18 +49,39 @@ export default function DashboardPage() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
+
   return (
     <div className="min-h-screen bg-black text-slate-50 selection:bg-indigo-500/30 flex flex-col">
       <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-black/80 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold tracking-tight">VertexShield Command Center</span>
+            <ShieldCheck className="h-6 w-6 text-indigo-500" />
+            <span className="text-lg font-display font-bold tracking-tight">VertexShield Dashboard</span>
           </div>
-          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse mr-2"></div>
-            GhostWire Middleware Active
-          </Badge>
+          <div className="flex items-center gap-6">
+            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hidden sm:flex">
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse mr-2"></div>
+              System Active
+            </Badge>
+            <div className="flex items-center gap-3 pl-6 border-l border-zinc-800">
+              <div className="text-right">
+                <div className="text-sm font-medium">{user?.name || user?.email}</div>
+                <div className="text-xs text-zinc-500">Account</div>
+              </div>
+              <Button 
+                onClick={handleLogout} 
+                variant="ghost" 
+                size="sm"
+                className="text-zinc-400 hover:text-slate-200 hover:bg-zinc-800/50 rounded-lg"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -64,7 +90,7 @@ export default function DashboardPage() {
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-zinc-950/80 via-black to-black" />
           <div className="relative container py-8 space-y-8">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="bg-zinc-950/50 backdrop-blur-md border border-zinc-800">
+              <Card className="bg-zinc-950/50 backdrop-blur-md border border-zinc-800 hover:border-zinc-700 transition-colors">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Monitored SKUs</CardTitle>
                   <Database className="h-4 w-4 text-blue-500" />
@@ -74,7 +100,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground">+12 from last week</p>
                 </CardContent>
               </Card>
-              <Card className="bg-zinc-950/50 backdrop-blur-md border border-zinc-800">
+              <Card className="bg-zinc-950/50 backdrop-blur-md border border-zinc-800 hover:border-zinc-700 transition-colors">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Reviews Scanned (24h)</CardTitle>
                   <Activity className="h-4 w-4 text-emerald-500" />
@@ -84,7 +110,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground">Across 4 platforms</p>
                 </CardContent>
               </Card>
-              <Card className="bg-zinc-950/50 backdrop-blur-md border border-zinc-800">
+              <Card className="bg-zinc-950/50 backdrop-blur-md border border-zinc-800 hover:border-zinc-700 transition-colors">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Active Anomalies</CardTitle>
                   <AlertTriangle className="h-4 w-4 text-destructive" />
@@ -94,7 +120,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground">Requires immediate review</p>
                 </CardContent>
               </Card>
-              <Card className="bg-zinc-950/50 backdrop-blur-md border border-zinc-800">
+              <Card className="bg-zinc-950/50 backdrop-blur-md border border-zinc-800 hover:border-zinc-700 transition-colors">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Revenue Protected</CardTitle>
                   <DollarSign className="h-4 w-4 text-indigo-500" />
@@ -107,7 +133,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-7 lg:grid-cols-7">
-              <Card className="col-span-4 bg-zinc-950/50 backdrop-blur-md border border-zinc-800">
+              <Card className="col-span-4 bg-zinc-950/50 backdrop-blur-md border border-zinc-800 hover:border-zinc-700 transition-colors">
                 <CardHeader>
                   <CardTitle>Active Review Bombing Alerts</CardTitle>
                   <CardDescription>Anomalous temporal bursts and semantic patterns detected.</CardDescription>
@@ -146,10 +172,10 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-              <Card className="col-span-3 bg-zinc-950/50 backdrop-blur-md border border-zinc-800 flex flex-col">
+              <Card className="col-span-3 bg-zinc-950/50 backdrop-blur-md border border-zinc-800 hover:border-zinc-700 transition-colors flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Search className="h-5 w-5 text-primary" />
+                    <Search className="h-5 w-5 text-indigo-500" />
                     Investigation Engine
                   </CardTitle>
                   <CardDescription>Execute bipartite graph mapping and feature extraction.</CardDescription>
@@ -167,9 +193,9 @@ export default function DashboardPage() {
                       </SelectContent>
                     </Select>
 
-                    <Button onClick={handleInference} disabled={isAnalyzing} className="w-full gap-2">
+                    <Button onClick={handleInference} disabled={isAnalyzing} className="w-full gap-2 bg-indigo-600 hover:bg-indigo-500">
                       {isAnalyzing ? (
-                        <><div className="h-4 w-4 rounded-full border-2 border-primary-foreground/20 border-t-primary-foreground animate-spin" /> Extracting Graph Data...</>
+                        <><div className="h-4 w-4 rounded-full border-2 border-white/20 border-t-white animate-spin" /> Extracting Graph Data...</>
                       ) : (
                         <>Execute Threat Inference <ArrowRight className="h-4 w-4" /></>
                       )}
@@ -215,5 +241,13 @@ export default function DashboardPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }

@@ -203,7 +203,7 @@ export function HeroSection() {
             size="lg"
             className="bg-foreground hover:bg-foreground/90 text-background px-8 h-14 text-base rounded-full"
           >
-            <a href="/login">Sign In</a>
+            <a href="/dashboard">Go to Dashboard</a>
           </Button>
         </div>
         </div>
