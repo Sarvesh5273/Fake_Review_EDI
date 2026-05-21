@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
+import torch
 from tqdm.auto import tqdm
 
+# Import dynamic paths from config
+from src.config import SYNTHETIC_REVIEWS_PATH, USER_FEATURES_PATH
 
-INPUT_CSV = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/synthetic_reviews.csv")
-OUTPUT_CSV = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/user_features.csv")
+INPUT_CSV = SYNTHETIC_REVIEWS_PATH
+OUTPUT_CSV = USER_FEATURES_PATH
+
 REQUIRED_COLUMNS = {
     "User_ID",
     "Product_ID",
@@ -109,7 +111,9 @@ def main() -> None:
         ) from exc
 
     try:
-        model = SentenceTransformer("all-MiniLM-L6-v2")
+        # Cross-platform hardware acceleration logic
+        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+        model = SentenceTransformer("all-MiniLM-L6-v2", device=device)
     except OSError as exc:
         raise RuntimeError(
             "Failed to load model 'all-MiniLM-L6-v2'. Check internet access or local model cache."

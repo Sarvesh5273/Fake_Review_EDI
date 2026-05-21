@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import ast
-from pathlib import Path
-
+import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -11,12 +10,24 @@ from sklearn.metrics import classification_report, roc_auc_score, roc_curve
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
+# Import dynamic paths and settings from config
+from src.config import (
+    FINAL_FEATURES_PATH,
+    SYNTHETIC_REVIEWS_PATH,
+    ASSETS_DIR,
+    MODELS_DIR,
+    RANDOM_SEED
+)
 
-FINAL_FEATURES_CSV = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/final_features.csv")
-REVIEWS_CSV = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/synthetic_reviews.csv")
-ROC_PLOT_PATH = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/roc_curve_rf.png")
+FINAL_FEATURES_CSV = FINAL_FEATURES_PATH
+REVIEWS_CSV = SYNTHETIC_REVIEWS_PATH
+ROC_PLOT_PATH = ASSETS_DIR / "roc_curve_custom_rf.png"
+
+# Added Model Persistence Paths
+CUSTOM_MODEL_PATH = MODELS_DIR / "custom_rf_model.pkl"
+CUSTOM_SCALER_PATH = MODELS_DIR / "custom_scaler.pkl"
+
 LABEL_COLUMN = "Is_Spam"
-RANDOM_SEED = 42
 
 
 def parse_array_like(value: object) -> object:
@@ -69,7 +80,7 @@ def expand_array_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def load_and_prepare_data() -> tuple[np.ndarray, np.ndarray]:
     if not FINAL_FEATURES_CSV.exists():
-        raise FileNotFoundError(f"Missing file: {FINAL_FEATURES_CSV}")
+        raise FileNotFoundError(f"Missing file: {FINAL_FEATURES_CSV}. Run pipeline first.")
 
     df = pd.read_csv(FINAL_FEATURES_CSV)
     df = expand_array_columns(df)
@@ -125,10 +136,16 @@ def main() -> None:
     )
     model.fit(X_train, y_train)
 
+    # Serialize and save the model artifacts for production inference
+    joblib.dump(scaler, CUSTOM_SCALER_PATH)
+    joblib.dump(model, CUSTOM_MODEL_PATH)
+    print(f"Custom Scaler saved to: {CUSTOM_SCALER_PATH}")
+    print(f"Custom Model saved to: {CUSTOM_MODEL_PATH}")
+
     y_pred = model.predict(X_test)
     y_proba = model.predict_proba(X_test)[:, 1]
 
-    print("Classification Report:")
+    print("\nClassification Report:")
     print(classification_report(y_test, y_pred, digits=4))
 
     if len(np.unique(y_test)) > 1:
@@ -140,7 +157,7 @@ def main() -> None:
         plt.plot([0, 1], [0, 1], linestyle="--", color="gray")
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
-        plt.title("ROC-AUC Curve (Random Forest)")
+        plt.title("ROC-AUC Curve (Custom Pipeline)")
         plt.legend(loc="lower right")
         plt.tight_layout()
         plt.savefig(ROC_PLOT_PATH)

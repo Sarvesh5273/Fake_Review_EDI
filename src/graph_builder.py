@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import networkx as nx
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 
+# Import dynamic paths from config
+from src.config import SYNTHETIC_REVIEWS_PATH, USER_FEATURES_PATH, FINAL_FEATURES_PATH
 
-REVIEWS_CSV = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/synthetic_reviews.csv")
-USER_FEATURES_CSV = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/user_features.csv")
-OUTPUT_CSV = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/final_features.csv")
+REVIEWS_CSV = SYNTHETIC_REVIEWS_PATH
+USER_FEATURES_CSV = USER_FEATURES_PATH
+OUTPUT_CSV = FINAL_FEATURES_PATH
 BURST_WINDOW_DAYS = 7
 
 
