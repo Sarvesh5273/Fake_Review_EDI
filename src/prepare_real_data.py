@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
-
 import numpy as np
 import openpyxl  # noqa: F401
 import pandas as pd
 
+# Import dynamic paths from config
+from src.config import RAW_DATA_DIR, SYNTHETIC_REVIEWS_PATH
 
-METADATA_XLSX = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/Yelp Metadata.xlsx")
-DATASET_XLSX = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/Yelp dataset.xlsx")
-OUTPUT_CSV = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/synthetic_reviews.csv")
+METADATA_XLSX = RAW_DATA_DIR / "Yelp Metadata.xlsx"
+DATASET_XLSX = RAW_DATA_DIR / "Yelp dataset.xlsx"
+OUTPUT_CSV = SYNTHETIC_REVIEWS_PATH
 SAMPLE_SIZE = 15_000
 RANDOM_STATE = 42
 
@@ -86,9 +86,9 @@ def stratified_sample_exact(
 
 def main() -> None:
     if not METADATA_XLSX.exists():
-        raise FileNotFoundError(f"Missing file: {METADATA_XLSX}")
+        raise FileNotFoundError(f"Missing file: {METADATA_XLSX}. Place it in data/raw/.")
     if not DATASET_XLSX.exists():
-        raise FileNotFoundError(f"Missing file: {DATASET_XLSX}")
+        raise FileNotFoundError(f"Missing file: {DATASET_XLSX}. Place it in data/raw/.")
 
     metadata = pd.read_excel(METADATA_XLSX, engine="openpyxl")
     reviews = pd.read_excel(DATASET_XLSX, engine="openpyxl")

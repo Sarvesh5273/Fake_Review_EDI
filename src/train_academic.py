@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import joblib
-from pathlib import Path
-
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import loadmat
@@ -11,16 +9,17 @@ from sklearn.metrics import classification_report, roc_auc_score, roc_curve
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-# Define Paths
-DATA_PATH = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/YelpChi.mat")
-ROC_PLOT_PATH = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/academic_roc_curve.png")
-MODEL_PATH = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/random_forest_model.pkl")
-SCALER_PATH = Path("/Users/sarvesh/Desktop/Fake_Review_EDI/scaler.pkl")
-RANDOM_SEED = 42
+# Import dynamic paths from config
+from src.config import RAW_DATA_DIR, ASSETS_DIR, MODELS_DIR, RANDOM_SEED
+
+DATA_PATH = RAW_DATA_DIR / "YelpChi.mat"
+ROC_PLOT_PATH = ASSETS_DIR / "academic_roc_curve.png"
+MODEL_PATH = MODELS_DIR / "random_forest_model.pkl"
+SCALER_PATH = MODELS_DIR / "scaler.pkl"
 
 def main() -> None:
     if not DATA_PATH.exists():
-        raise FileNotFoundError(f"Missing dataset file: {DATA_PATH}")
+        raise FileNotFoundError(f"Missing dataset file: {DATA_PATH}. Ensure YelpChi.mat is in data/raw/.")
 
     mat = loadmat(DATA_PATH)
     if "features" not in mat or "label" not in mat:
@@ -66,7 +65,7 @@ def main() -> None:
     y_pred = model.predict(X_test)
     y_prob = model.predict_proba(X_test)[:, 1]
 
-    print("Classification Report:")
+    print("\nClassification Report:")
     print(classification_report(y_test, y_pred, digits=4))
 
     auc = roc_auc_score(y_test, y_prob)

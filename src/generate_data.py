@@ -6,6 +6,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 import random
 import string
 
+# Import dynamic path from config
+from src.config import SYNTHETIC_REVIEWS_PATH
+
 np.random.seed(42)
 random.seed(42)
 
@@ -168,7 +171,7 @@ if len(spam_df) > 1:
         print(f"Average cosine similarity of spam reviews: {avg_similarity:.4f}")
 
 # Save to CSV
-output_file = '/Users/sarvesh/Desktop/Fake_Review_EDI/synthetic_reviews.csv'
+output_file = SYNTHETIC_REVIEWS_PATH
 df.to_csv(output_file, index=False)
 
 print(f"\n=== Dataset Generation Complete ===")
@@ -186,4 +189,3 @@ print(f"  - Timestamp range: {df['Timestamp'].min()} to {df['Timestamp'].max()}"
 print(f"  - Unique products: {df['Product_ID'].nunique()}")
 print(f"  - Unique users: {df['User_ID'].nunique()}")
 print(f"\nOutput file: {output_file}")
-
