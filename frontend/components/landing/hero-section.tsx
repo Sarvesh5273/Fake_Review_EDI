@@ -216,18 +216,7 @@ export function HeroSection() {
         }`}
       >
         <div className="max-w-[1400px] mx-auto flex items-start gap-10 lg:gap-20">
-          {[
-            { value: "3500+", label: "autonomous agents active" },
-            { value: "99.7%", label: "distributed uptime" },
-            { value: "<50ms", label: "execution latency" },
-          ].map((stat) => (
-            <div key={stat.label} className="flex flex-col gap-2">
-              <span className="text-3xl lg:text-4xl font-display text-white">{stat.value}</span>
-              <span className="text-xs text-white/50 leading-tight">
-                {stat.label}
-              </span>
-            </div>
-          ))}
+          
         </div>
       </div>
 

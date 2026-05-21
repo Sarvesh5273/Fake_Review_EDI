@@ -1,50 +1,77 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-context';
-import { Button } from '@/components/ui/button';
-
-const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 backdrop-blur-sm transition-colors focus-within:border-indigo-500/70 focus-within:bg-indigo-500/10">
-    {children}
-  </div>
-);
+import React, { useEffect, useState } from "react";
+import { ArrowRight, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
+import { Button } from "@/components/ui/button";
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [signupNotice, setSignupNotice] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const router = useRouter();
   const { signup } = useAuth();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreeToTerms) {
-      alert('Please agree to the Terms of Service');
+      alert("Please agree to the Terms of Service");
       return;
     }
+
     setIsLoading(true);
+    setAuthError(null);
+    setSignupNotice(null);
     try {
-      await signup(email, password, name);
-      router.push('/dashboard');
+      const result = await signup(email, password, name);
+      if (result.needsEmailVerification) {
+        setSignupNotice("Check your email to confirm your account before signing in.");
+        return;
+      }
+      router.push("/dashboard");
     } catch (error) {
-      console.error('Signup failed:', error);
+      const message = error instanceof Error ? error.message : "Signup failed. Please try again.";
+      setAuthError(message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row w-full bg-black text-slate-50 selection:bg-indigo-500/30 relative overflow-hidden">
-      
-      {/* Subtle background grid for landing page consistency */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-10">
+    <div className="relative min-h-screen overflow-hidden bg-black text-white">
+      {/* Background video */}
+      <div className="absolute inset-0 z-0">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-hidden="true"
+          className="h-full w-full object-cover object-center opacity-70"
+        >
+          <source
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bg-hero-0BnFGdr81Ifnj3WbBZoNt1KE4D5DMT.mp4"
+            type="video/mp4"
+          />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80" />
+      </div>
+
+      {/* Grid overlay */}
+      <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none opacity-20">
         {[...Array(8)].map((_, i) => (
           <div
             key={`h-${i}`}
@@ -69,156 +96,191 @@ export default function SignupPage() {
         ))}
       </div>
 
-      {/* Glow effect */}
-      <div className="absolute top-1/4 -left-96 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
-      
-      {/* Left column: Sign-up form */}
-      <section className="flex-1 flex items-center justify-center p-8 z-10">
-        <div className="w-full max-w-md">
-          <div className="flex flex-col gap-6">
-            
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 group mb-4">
-              <ShieldCheck className="h-8 w-8 text-indigo-500 group-hover:text-indigo-400 transition-colors" />
-              <span className="text-2xl font-display font-bold tracking-tight group-hover:text-indigo-400 transition-colors">VERTEXSHIELD</span>
-            </Link>
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1400px] flex-col px-6 lg:px-12">
+        <header className="flex items-center justify-between py-8 lg:py-10">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <span className="text-2xl font-display tracking-tight text-white">VERTEXSHIELD</span>
+            <span className="font-mono text-xs text-white/40">TM</span>
+          </Link>
+          <Link href="/" className="text-sm text-white/60 transition-colors hover:text-white">
+            Back home
+          </Link>
+        </header>
 
-            <div>
-              <h1 className="text-4xl font-semibold leading-tight tracking-tight mb-2">
-                Get Started Free
-              </h1>
-              <p className="text-zinc-400">Create your account and start detecting fake reviews today</p>
+        <main className="grid flex-1 items-center gap-12 pb-12 lg:grid-cols-12 lg:pb-20">
+          <section className="lg:col-span-7 lg:max-w-[780px]">
+            <div
+              className={`mb-8 transition-all duration-700 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
+            >
+              <span className="inline-flex items-center gap-3 text-sm font-mono text-white/60">
+                <span className="h-px w-8 bg-white/30" />
+                Secure access
+              </span>
             </div>
 
-            <form className="space-y-5 mt-4" onSubmit={handleSignUp}>
-              <div>
-                <label className="text-sm font-medium text-zinc-400 block mb-2">Full Name</label>
-                <GlassInputWrapper>
-                  <input 
-                    name="name" 
-                    type="text" 
-                    placeholder="John Doe" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-transparent text-sm p-4 rounded-xl focus:outline-none placeholder:text-zinc-700" 
-                    required 
-                  />
-                </GlassInputWrapper>
-              </div>
+            <h1
+              className={`text-left text-[clamp(3rem,7vw,7rem)] font-display leading-[0.92] tracking-tight transition-all duration-1000 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              }`}
+            >
+              Create your
+              <br />
+              <span className="text-white/40">VertexShield account.</span>
+            </h1>
 
-              <div>
-                <label className="text-sm font-medium text-zinc-400 block mb-2">Email Address</label>
-                <GlassInputWrapper>
-                  <input 
-                    name="email" 
-                    type="email" 
-                    placeholder="you@company.com" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-transparent text-sm p-4 rounded-xl focus:outline-none placeholder:text-zinc-700" 
-                    required 
-                  />
-                </GlassInputWrapper>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-zinc-400 block mb-2">Password</label>
-                <GlassInputWrapper>
-                  <div className="relative">
-                    <input 
-                      name="password" 
-                      type={showPassword ? 'text' : 'password'} 
-                      placeholder="••••••••" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-transparent text-sm p-4 pr-12 rounded-xl focus:outline-none placeholder:text-zinc-700" 
-                      required 
-                    />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-4 flex items-center">
-                      {showPassword ? <EyeOff className="w-5 h-5 text-zinc-500 hover:text-slate-200 transition-colors" /> : <Eye className="w-5 h-5 text-zinc-500 hover:text-slate-200 transition-colors" />}
-                    </button>
-                  </div>
-                </GlassInputWrapper>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <input 
-                  type="checkbox" 
-                  id="terms"
-                  checked={agreeToTerms}
-                  onChange={(e) => setAgreeToTerms(e.target.checked)}
-                  className="mt-1 rounded border-zinc-800 bg-zinc-950 text-indigo-500 focus:ring-indigo-500" 
-                />
-                <label htmlFor="terms" className="text-xs text-zinc-400 leading-relaxed cursor-pointer">
-                  I agree to VertexShield's{' '}
-                  <a href="#" className="text-zinc-300 hover:text-zinc-200 underline">Terms of Service</a>
-                  {' '}and{' '}
-                  <a href="#" className="text-zinc-300 hover:text-zinc-200 underline">Privacy Policy</a>
-                </label>
-              </div>
-
-              <Button type="submit" disabled={isLoading} className="w-full rounded-xl bg-indigo-600 py-4 font-medium text-white hover:bg-indigo-500 transition-colors shadow-[0_0_20px_rgba(99,102,241,0.2)]">
-                {isLoading ? (
-                  <>
-                    <div className="h-4 w-4 rounded-full border-2 border-white/20 border-t-white animate-spin mr-2" />
-                    Creating Account...
-                  </>
-                ) : (
-                  <>
-                    Create Free Account
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </form>
-
-            <div className="relative flex items-center justify-center mt-4">
-              <span className="w-full border-t border-zinc-800"></span>
-              <span className="px-4 text-sm text-zinc-500 bg-black absolute">Already have an account?</span>
-            </div>
-
-            <Link href="/login" className="w-full flex items-center justify-center gap-2 border border-zinc-800/50 bg-zinc-950/30 rounded-xl py-4 hover:bg-zinc-900/50 transition-colors text-sm font-medium text-white/80 hover:text-white">
-                Sign In Instead
-                <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Right column: Thematic Abstract Background */}
-      <section className="hidden md:flex flex-1 relative bg-gradient-to-br from-zinc-950 via-black to-zinc-950 border-l border-zinc-900 items-center justify-center overflow-hidden">
-        {/* Subtle glowing grid effect */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/15 rounded-full blur-[120px]"></div>
-        
-        <div className="relative z-10 max-w-md text-center space-y-6">
-          <div className="flex justify-center">
-            <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
-              <ShieldCheck className="h-12 w-12 text-indigo-400" />
-            </div>
-          </div>
-          <div>
-            <h2 className="text-3xl font-display font-semibold text-slate-200 mb-4">Ready to Protect Your Brand?</h2>
-            <p className="text-zinc-400 leading-relaxed text-lg">
-              Join hundreds of enterprises protecting their revenue from coordinated fake reviews and bot attacks.
+            <p
+              className={`mt-8 max-w-2xl text-xl leading-relaxed text-white/65 transition-all duration-700 delay-150 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
+            >
+              Start detecting fake reviews, tracing coordinated attacks, and exporting evidence in minutes.
             </p>
-          </div>
-          <div className="space-y-3 pt-4 text-sm text-zinc-400">
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-2 rounded-full bg-indigo-500 flex-shrink-0" />
-              <span>Connect your marketplace accounts</span>
+
+            <div
+              className={`mt-12 grid gap-4 sm:grid-cols-3 transition-all duration-700 delay-200 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
+            >
+              {[
+                { value: "Quick", label: "setup flow" },
+                { value: "Live", label: "marketplace coverage" },
+                { value: "Export", label: "evidence-ready" },
+              ].map((stat) => (
+                <div key={stat.label} className="border border-white/10 bg-black/30 p-5 backdrop-blur-sm">
+                  <div className="text-2xl font-display">{stat.value}</div>
+                  <div className="mt-2 text-xs uppercase tracking-[0.2em] text-white/40">{stat.label}</div>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-2 rounded-full bg-indigo-500 flex-shrink-0" />
-              <span>Detect suspicious patterns instantly</span>
+          </section>
+
+          <section className="lg:col-span-5 lg:justify-self-end lg:w-full lg:max-w-[520px]">
+            <div
+              className={`border border-white/10 bg-black/55 p-8 shadow-2xl backdrop-blur-xl transition-all duration-1000 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              }`}
+            >
+              <div className="mb-8">
+                <div className="mb-4 inline-flex items-center gap-2 text-sm font-mono text-white/40">
+                  <ShieldCheck className="h-4 w-4 text-white/60" />
+                  Create account
+                </div>
+                <h2 className="text-3xl font-display tracking-tight">Get started</h2>
+                <p className="mt-3 text-sm leading-relaxed text-white/55">
+                  Register to monitor marketplaces, create alerts, and manage dispute workflows.
+                </p>
+              </div>
+
+              <form className="space-y-5" onSubmit={handleSignUp}>
+                <div>
+                  <label className="mb-2 block text-sm text-white/55">Full Name</label>
+                  <div className="border border-white/10 bg-white/[0.03] transition-colors focus-within:border-white/30">
+                    <input
+                      name="name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full bg-transparent p-4 text-sm text-white placeholder:text-white/25 focus:outline-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm text-white/55">Email Address</label>
+                  <div className="border border-white/10 bg-white/[0.03] transition-colors focus-within:border-white/30">
+                    <input
+                      name="email"
+                      type="email"
+                      placeholder="you@company.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-transparent p-4 text-sm text-white placeholder:text-white/25 focus:outline-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm text-white/55">Password</label>
+                  <div className="border border-white/10 bg-white/[0.03] transition-colors focus-within:border-white/30">
+                    <div className="relative">
+                      <input
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-transparent p-4 pr-12 text-sm text-white placeholder:text-white/25 focus:outline-none"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute inset-y-0 right-4 flex items-center text-white/45 transition-colors hover:text-white"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    checked={agreeToTerms}
+                    onChange={(e) => setAgreeToTerms(e.target.checked)}
+                    className="mt-1 rounded border-white/20 bg-black text-white focus:ring-white"
+                  />
+                  <label htmlFor="terms" className="text-xs leading-relaxed text-white/50">
+                    I agree to VertexShield&apos;s{" "}
+                    <a href="#" className="underline underline-offset-4 transition-colors hover:text-white">
+                      Terms of Service
+                    </a>{" "}
+                    and{" "}
+                    <a href="#" className="underline underline-offset-4 transition-colors hover:text-white">
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
+                {signupNotice && (
+                  <div className="border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+                    {signupNotice}
+                  </div>
+                )}
+                {authError && (
+                  <div className="border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200">
+                    {authError}
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="h-14 w-full rounded-none bg-white text-black hover:bg-white/90"
+                >
+                  {isLoading ? "Creating account..." : "Create Account"}
+                  {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
+                </Button>
+              </form>
+
+              <div className="mt-8 border-t border-white/10 pt-6">
+                <div className="flex items-center justify-between gap-4 text-sm text-white/50">
+                  <span>Already have an account?</span>
+                  <Link href="/login" className="text-white transition-colors hover:text-white/70">
+                    Sign in
+                  </Link>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-2 rounded-full bg-indigo-500 flex-shrink-0" />
-              <span>Automate dispute filing</span>
-            </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

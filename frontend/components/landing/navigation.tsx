@@ -31,10 +31,13 @@ export function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    router.push("/");
-    setIsMobileMenuOpen(false);
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      router.push("/");
+      setIsMobileMenuOpen(false);
+    }
   };
 
   if (!mounted) return null;

@@ -1,53 +1,64 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-context';
-import { Button } from '@/components/ui/button';
-
-const GoogleIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 48 48">
-        <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s12-5.373 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-2.641-.21-5.236-.611-7.743z" />
-        <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
-        <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
-        <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C42.022 35.026 44 30.038 44 24c0-2.641-.21-5.236-.611-7.743z" />
-    </svg>
-);
-
-const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 backdrop-blur-sm transition-colors focus-within:border-indigo-500/70 focus-within:bg-indigo-500/10">
-    {children}
-  </div>
-);
+import React, { useEffect, useState } from "react";
+import { ArrowRight, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
+import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setAuthError(null);
     try {
       await login(email, password);
-      router.push('/dashboard');
+      router.push("/dashboard");
     } catch (error) {
-      console.error('Login failed:', error);
+      const message = error instanceof Error ? error.message : "Login failed. Please try again.";
+      setAuthError(message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row w-full bg-black text-slate-50 selection:bg-indigo-500/30 relative overflow-hidden">
-      
-      {/* Subtle background grid for landing page consistency */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-10">
+    <div className="relative min-h-screen overflow-hidden bg-black text-white">
+      {/* Background video */}
+      <div className="absolute inset-0 z-0">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-hidden="true"
+          className="h-full w-full object-cover object-center opacity-70"
+        >
+          <source
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bg-hero-0BnFGdr81Ifnj3WbBZoNt1KE4D5DMT.mp4"
+            type="video/mp4"
+          />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80" />
+      </div>
+
+      {/* Grid overlay */}
+      <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none opacity-20">
         {[...Array(8)].map((_, i) => (
           <div
             key={`h-${i}`}
@@ -72,126 +83,151 @@ export default function LoginPage() {
         ))}
       </div>
 
-      {/* Glow effect */}
-      <div className="absolute top-1/4 -left-96 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
-      
-      {/* Left column: Sign-in form */}
-      <section className="flex-1 flex items-center justify-center p-8 z-10">
-        <div className="w-full max-w-md">
-          <div className="flex flex-col gap-6">
-            
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 group mb-4">
-              <ShieldCheck className="h-8 w-8 text-indigo-500 group-hover:text-indigo-400 transition-colors" />
-              <span className="text-2xl font-display font-bold tracking-tight group-hover:text-indigo-400 transition-colors">VERTEXSHIELD</span>
-            </Link>
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1400px] flex-col px-6 lg:px-12">
+        <header className="flex items-center justify-between py-8 lg:py-10">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <span className="text-2xl font-display tracking-tight text-white">VERTEXSHIELD</span>
+            <span className="font-mono text-xs text-white/40">TM</span>
+          </Link>
+          <Link href="/" className="text-sm text-white/60 transition-colors hover:text-white">
+            Back home
+          </Link>
+        </header>
 
-            <div>
-              <h1 className="text-4xl font-semibold leading-tight tracking-tight mb-2">
-                Welcome Back
-              </h1>
-              <p className="text-zinc-400">Access your fake review protection dashboard</p>
+        <main className="grid flex-1 items-center gap-12 pb-12 lg:grid-cols-12 lg:pb-20">
+          <section className="lg:col-span-7 lg:max-w-[780px]">
+            <div
+              className={`mb-8 transition-all duration-700 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
+            >
+              <span className="inline-flex items-center gap-3 text-sm font-mono text-white/60">
+                <span className="h-px w-8 bg-white/30" />
+                Secure access
+              </span>
             </div>
 
-            <form className="space-y-5 mt-4" onSubmit={handleSignIn}>
-              <div>
-                <label className="text-sm font-medium text-zinc-400 block mb-2">Email Address</label>
-                <GlassInputWrapper>
-                  <input 
-                    name="email" 
-                    type="email" 
-                    placeholder="admin@company.com" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-transparent text-sm p-4 rounded-xl focus:outline-none placeholder:text-zinc-700" 
-                    required 
-                  />
-                </GlassInputWrapper>
+            <h1
+              className={`text-left text-[clamp(3rem,7vw,7rem)] font-display leading-[0.92] tracking-tight transition-all duration-1000 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              }`}
+            >
+              Sign in to
+              <br />
+              <span className="text-white/40">VertexShield.</span>
+            </h1>
+
+            <p
+              className={`mt-8 max-w-2xl text-xl leading-relaxed text-white/65 transition-all duration-700 delay-150 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
+            >
+              Monitor marketplaces, prove coordinated review attacks, and move straight into your dashboard.
+            </p>
+
+            <div
+              className={`mt-12 grid gap-4 sm:grid-cols-3 transition-all duration-700 delay-200 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
+            >
+              {[
+                { value: "Real-time", label: "attack detection" },
+                { value: "Evidence", label: "export ready" },
+                { value: "Fast", label: "dashboard access" },
+              ].map((stat) => (
+                <div key={stat.label} className="border border-white/10 bg-black/30 p-5 backdrop-blur-sm">
+                  <div className="text-2xl font-display">{stat.value}</div>
+                  <div className="mt-2 text-xs uppercase tracking-[0.2em] text-white/40">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="lg:col-span-5 lg:justify-self-end lg:w-full lg:max-w-[520px]">
+            <div
+              className={`border border-white/10 bg-black/55 p-8 shadow-2xl backdrop-blur-xl transition-all duration-1000 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              }`}
+            >
+              <div className="mb-8">
+                <div className="mb-4 inline-flex items-center gap-2 text-sm font-mono text-white/40">
+                  <ShieldCheck className="h-4 w-4 text-white/60" />
+                  Authentication
+                </div>
+                <h2 className="text-3xl font-display tracking-tight">Welcome back</h2>
+                <p className="mt-3 text-sm leading-relaxed text-white/55">
+                  Sign in to continue reviewing alerts, disputes, and marketplace coverage.
+                </p>
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-zinc-400 block mb-2">Password</label>
-                <GlassInputWrapper>
-                  <div className="relative">
-                    <input 
-                      name="password" 
-                      type={showPassword ? 'text' : 'password'} 
-                      placeholder="••••••••" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-transparent text-sm p-4 pr-12 rounded-xl focus:outline-none placeholder:text-zinc-700" 
-                      required 
+              <form className="space-y-5" onSubmit={handleSignIn}>
+                <div>
+                  <label className="mb-2 block text-sm text-white/55">Email Address</label>
+                  <div className="border border-white/10 bg-white/[0.03] transition-colors focus-within:border-white/30">
+                    <input
+                      name="email"
+                      type="email"
+                      placeholder="you@company.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-transparent p-4 text-sm text-white placeholder:text-white/25 focus:outline-none"
+                      required
                     />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-4 flex items-center">
-                      {showPassword ? <EyeOff className="w-5 h-5 text-zinc-500 hover:text-slate-200 transition-colors" /> : <Eye className="w-5 h-5 text-zinc-500 hover:text-slate-200 transition-colors" />}
-                    </button>
                   </div>
-                </GlassInputWrapper>
-              </div>
+                </div>
 
-              <Button type="submit" disabled={isLoading} className="w-full rounded-xl bg-indigo-600 py-4 font-medium text-white hover:bg-indigo-500 transition-colors shadow-[0_0_20px_rgba(99,102,241,0.2)]">
-                {isLoading ? (
-                  <>
-                    <div className="h-4 w-4 rounded-full border-2 border-white/20 border-t-white animate-spin mr-2" />
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    Access Dashboard
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
+                <div>
+                  <label className="mb-2 block text-sm text-white/55">Password</label>
+                  <div className="border border-white/10 bg-white/[0.03] transition-colors focus-within:border-white/30">
+                    <div className="relative">
+                      <input
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-transparent p-4 pr-12 text-sm text-white placeholder:text-white/25 focus:outline-none"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute inset-y-0 right-4 flex items-center text-white/45 transition-colors hover:text-white"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {authError && (
+                  <div className="border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200">
+                    {authError}
+                  </div>
                 )}
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="h-14 w-full rounded-none bg-white text-black hover:bg-white/90"
+                >
+                  {isLoading ? "Signing in..." : "Access Dashboard"}
+                  {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
+                </Button>
+              </form>
 
-            <div className="relative flex items-center justify-center mt-4">
-              <span className="w-full border-t border-zinc-800"></span>
-              <span className="px-4 text-sm text-zinc-500 bg-black absolute">New to VertexShield?</span>
+              <div className="mt-8 border-t border-white/10 pt-6">
+                <div className="flex items-center justify-between gap-4 text-sm text-white/50">
+                  <span>New to VertexShield?</span>
+                  <Link href="/signup" className="text-white transition-colors hover:text-white/70">
+                    Create account
+                  </Link>
+                </div>
+              </div>
             </div>
-
-            <Link href="/signup" className="w-full flex items-center justify-center gap-2 border border-zinc-800/50 bg-zinc-950/30 rounded-xl py-4 hover:bg-zinc-900/50 transition-colors text-sm font-medium text-white/80 hover:text-white">
-                Create Free Account
-                <ArrowRight className="w-4 h-4" />
-            </Link>
-
-            <p className="text-center text-xs text-zinc-500">
-              By signing in, you agree to our{' '}
-              <a href="#" className="text-zinc-400 hover:text-zinc-300 underline">Terms of Service</a>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Right column: Thematic Abstract Background */}
-      <section className="hidden md:flex flex-1 relative bg-gradient-to-br from-zinc-950 via-black to-zinc-950 border-l border-zinc-900 items-center justify-center overflow-hidden">
-        {/* Subtle glowing grid effect */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/15 rounded-full blur-[120px]"></div>
-        
-        <div className="relative z-10 max-w-md text-center space-y-6">
-          <div className="flex justify-center">
-            <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
-              <ShieldCheck className="h-12 w-12 text-indigo-400" />
-            </div>
-          </div>
-          <div>
-            <h2 className="text-3xl font-display font-semibold text-slate-200 mb-4">Protect Your Brand</h2>
-            <p className="text-zinc-400 leading-relaxed text-lg">
-              Detect coordinated fake reviews, bot networks, and review bombing attacks across all major marketplaces in real-time.
-            </p>
-          </div>
-          <div className="flex gap-4 justify-center text-sm text-zinc-400 pt-4">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-indigo-500" />
-              <span>Real-time Detection</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-indigo-500" />
-              <span>Automated Disputes</span>
-            </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

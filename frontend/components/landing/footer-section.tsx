@@ -120,7 +120,7 @@ export function FooterSection() {
               </a>
 
               <p className="text-white/50 leading-relaxed mb-8 max-w-xs text-sm">
-                Autonomous AI agents for distributed computing. Delegate complex tasks to intelligent workers.
+                VertexShield protects enterprise revenue with AI-driven review detection, evidence export, and marketplace defense workflows.
               </p>
 
               {/* Social Links */}

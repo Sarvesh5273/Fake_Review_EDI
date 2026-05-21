@@ -44,22 +44,22 @@ export function IntegrationsSection() {
           isVisible ? "opacity-100" : "opacity-0"
         }`}>
           <span className="w-12 h-px bg-foreground/20" />
-          Integrations
+          Coverage
           <span className="w-12 h-px bg-foreground/20" />
         </span>
 
         <h2 className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9] transition-all duration-1000 ${
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         }`}>
-          Connect
+          Monitor
           <br />
-          <span className="text-muted-foreground">everything.</span>
+          <span className="text-muted-foreground">everywhere.</span>
         </h2>
 
         <p className={`mt-8 text-xl text-muted-foreground leading-relaxed max-w-lg mx-auto transition-all duration-1000 delay-100 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}>
-          Your agents connect to 100+ tools and services. They read, write, and act autonomously across your entire stack.
+          VertexShield connects Amazon, Shopify, Walmart, and review platforms so you can detect coordinated attacks in real time.
         </p>
       </div>
 

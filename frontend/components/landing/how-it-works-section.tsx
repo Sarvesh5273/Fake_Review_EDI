@@ -85,9 +85,9 @@ export function HowItWorksSection() {
             <h2 className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.85] transition-all duration-1000 delay-100 ${
               isVisible ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0"
             }`}>
-              <span className="block">Define.</span>
-              <span className="block text-white/30">Deploy.</span>
-              <span className="block text-white/10">Scale.</span>
+              <span className="block">Detect.</span>
+              <span className="block text-white/30">Prove.</span>
+              <span className="block text-white/10">Act.</span>
             </h2>
           </div>
 
@@ -99,7 +99,7 @@ export function HowItWorksSection() {
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/tree-uAia6REvB137CQyHFCf0za3O6h2zKO.png"
               alt=""
               aria-hidden="true"
-              className="absolute bottom-0 left-0 w-full h-full object-contain object-bottom"
+              className="tree-float absolute bottom-0 left-0 w-full h-full object-contain object-bottom"
             />
             {/* Fade sur le bord gauche */}
             <div className="absolute inset-0 bg-gradient-to-r from-[oklch(0.09_0.01_260)] via-transparent to-transparent pointer-events-none" />
@@ -167,6 +167,14 @@ export function HowItWorksSection() {
         }
         .animate-progress {
           animation: progress 6s linear forwards;
+        }
+        @keyframes treeFloat {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50% { transform: translateY(-8px) scale(1.01); }
+        }
+        .tree-float {
+          animation: treeFloat 6s ease-in-out infinite;
+          will-change: transform;
         }
       `}</style>
     </section>

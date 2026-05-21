@@ -26,3 +26,6 @@ venv/
 # System files
 .DS_Store
 Thumbs.db
+
+.env.local
+.env.development.local  

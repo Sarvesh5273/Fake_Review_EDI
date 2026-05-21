@@ -1,11 +1,14 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 interface User {
   id: string;
   email: string;
-  name?: string;
+  name?: string | null;
+  role?: string | null;
 }
 
 interface AuthContextType {
@@ -13,61 +16,137 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
+  signup: (email: string, password: string, name: string) => Promise<{ needsEmailVerification: boolean }>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function mapUser(sessionUser: SupabaseUser | null, profile: { name: string | null; role: string | null } | null): User | null {
+  if (!sessionUser) return null;
+
+  return {
+    id: sessionUser.id,
+    email: sessionUser.email ?? "",
+    name: profile?.name ?? (sessionUser.user_metadata?.name as string | undefined) ?? sessionUser.email?.split("@")[0] ?? null,
+    role: profile?.role ?? null,
+  };
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        localStorage.removeItem('user');
+    const supabase = getSupabaseBrowserClient();
+
+    const syncSession = async (session: Session | null) => {
+      if (!session?.user) {
+        setUser(null);
+        return;
       }
-    }
-    setIsLoading(false);
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("name, role")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Failed to load profile:", error);
+      }
+
+      if (!data) {
+        const { data: inserted, error: insertError } = await supabase
+          .from("profiles")
+          .insert({
+            id: session.user.id,
+            email: session.user.email ?? null,
+            name: (session.user.user_metadata?.name as string | undefined) ?? null,
+          })
+          .select("name, role")
+          .single();
+
+        if (insertError) {
+          console.error("Failed to create profile:", insertError);
+          setUser(mapUser(session.user, null) ?? null);
+          return;
+        }
+
+        setUser(mapUser(session.user, inserted ?? null) ?? null);
+        return;
+      }
+
+      setUser(mapUser(session.user, data ?? null) ?? null);
+    };
+
+    const init = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Failed to load session:", error);
+      }
+      await syncSession(data.session);
+      setIsLoading(false);
+    };
+
+    init();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setIsLoading(true);
+      await syncSession(session);
+      setIsLoading(false);
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
+    const supabase = getSupabaseBrowserClient();
     setIsLoading(true);
-    try {
-      const newUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        email,
-        name: email.split('@')[0],
-      };
-      localStorage.setItem('user', JSON.stringify(newUser));
-      setUser(newUser);
-    } finally {
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
       setIsLoading(false);
+      throw error;
     }
+
+    setIsLoading(false);
   };
 
   const signup = async (email: string, password: string, name: string) => {
+    const supabase = getSupabaseBrowserClient();
     setIsLoading(true);
-    try {
-      const newUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        email,
-        name,
-      };
-      localStorage.setItem('user', JSON.stringify(newUser));
-      setUser(newUser);
-    } finally {
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name },
+      },
+    });
+
+    if (error) {
       setIsLoading(false);
+      throw error;
     }
+
+    const needsEmailVerification = !data.session;
+    setIsLoading(false);
+    return { needsEmailVerification };
   };
 
-  const logout = () => {
-    localStorage.removeItem('user');
-    setUser(null);
+  const logout = async () => {
+    const supabase = getSupabaseBrowserClient();
+    setIsLoading(true);
+
+    const { error } = await supabase.auth.signOut();
+    setIsLoading(false);
+
+    if (error) {
+      throw error;
+    }
   };
 
   return (
@@ -89,7 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

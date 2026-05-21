@@ -152,23 +152,23 @@ export function FeaturesSection() {
             <div className="lg:col-span-7">
               <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">
                 <span className="w-12 h-px bg-foreground/30" />
-                Capabilities
+                Core capabilities
               </span>
               <h2
                 className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9] transition-all duration-1000 ${
                   isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
               >
-                Intelligent
+                Detection
                 <br />
-                <span className="text-muted-foreground">workers.</span>
+                <span className="text-muted-foreground">at scale.</span>
               </h2>
             </div>
             <div className="lg:col-span-5 lg:pb-4">
               <p className={`text-xl text-muted-foreground leading-relaxed transition-all duration-1000 delay-200 ${
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}>
-                Deploy autonomous AI agents that execute complex tasks across distributed infrastructure. No supervision required.
+                Monitor marketplaces, trace coordinated review patterns, and export evidence fast enough to act before damage spreads.
               </p>
             </div>
           </div>
