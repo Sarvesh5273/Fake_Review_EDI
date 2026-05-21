@@ -1,0 +1,28 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env/
+
+# Model files
+*.pkl
+
+# Dataset files
+*.csv
+*.xlsx
+*.mat
+*.zip
+
+# Generated images
+*.png
+
+# VS Code settings
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
