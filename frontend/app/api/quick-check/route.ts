@@ -82,6 +82,53 @@ const extractReviewsFromPageText = (pageText: string, pageUrl: string) => {
     .map((line) => cleanText(line))
     .filter(Boolean);
 
+  if (/amazon\./i.test(pageUrl)) {
+    const reviews: ReviewInput[] = [];
+    for (let i = 0; i < lines.length; i += 1) {
+      if (lines[i] !== "Verified Purchase") continue;
+
+      let ratingIndex = i - 1;
+      while (ratingIndex >= 0 && !/^\d(?:\.\d)?\s+out of 5 stars$/i.test(lines[ratingIndex])) {
+        ratingIndex -= 1;
+      }
+
+      if (ratingIndex < 0) continue;
+
+      const rating = extractRating(lines[ratingIndex]);
+      const bodyLines: string[] = [];
+      for (let j = i + 1; j < lines.length; j += 1) {
+        const value = lines[j];
+        if (
+          /^Helpful$/i.test(value) ||
+          /^Report$/i.test(value) ||
+          /^\d+\s+people found this helpful$/i.test(value) ||
+          /^One person found this helpful$/i.test(value) ||
+          /^Reviewed in India on/i.test(value) ||
+          /^Colour:/i.test(value) ||
+          /^Color:/i.test(value)
+        ) {
+          break;
+        }
+        bodyLines.push(value);
+      }
+
+      const text = cleanText(bodyLines.join(" "));
+      if (text.length < 10) continue;
+
+      reviews.push({ text, rating, productId: pageUrl });
+    }
+
+    const deduped: ReviewInput[] = [];
+    const seen = new Set<string>();
+    for (const review of reviews) {
+      const key = `${review.text.slice(0, 140).toLowerCase()}|${review.rating ?? ""}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(review);
+    }
+    return deduped.slice(0, 20);
+  }
+
   const reviews: ReviewInput[] = [];
 
   for (let i = 0; i < lines.length; i += 1) {
@@ -121,11 +168,30 @@ const scrapeReviewsFromUrl = async (url: string) => {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1800 } });
 
   try {
-    await page.goto(url, { waitUntil: "networkidle", timeout: 45000 });
-    await page.waitForTimeout(1500);
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    } catch {
+      // Retailers often keep network activity alive; use the rendered DOM if navigation completes partially.
+    }
+    await page.waitForLoadState("domcontentloaded").catch(() => undefined);
+    await page.waitForTimeout(2500);
 
-    const pageText = await page.locator("body").innerText().catch(() => "");
-    const reviews = extractReviewsFromPageText(pageText, url);
+    let pageText = await page.locator("body").innerText().catch(() => "");
+    let reviews = extractReviewsFromPageText(pageText, url);
+
+    if (reviews.length < 3 && /amazon\./i.test(url)) {
+      const reviewLink = page.locator('a[href*="#customerReviews"], a:has-text("Reviews")').first();
+      if ((await reviewLink.count()) > 0) {
+        try {
+          await reviewLink.click({ timeout: 10000 });
+        } catch {
+          await page.goto(`${page.url().split("#")[0]}#customerReviews`, { waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => undefined);
+        }
+        await page.waitForTimeout(2500);
+        pageText = await page.locator("body").innerText().catch(() => "");
+        reviews = extractReviewsFromPageText(pageText, url);
+      }
+    }
 
     return {
       pageTitle: cleanText((await page.title().catch(() => "")) || (await page.locator("h1").first().innerText().catch(() => "")) || "Unknown product"),
@@ -216,6 +282,7 @@ export async function POST(request: Request) {
       const result = parsePythonJson(stdout);
       return NextResponse.json({
         ...result,
+        reviewCount: reviews.length,
         marketplaceHint,
         sourceMode,
         scrapeMode: scrapeMode ?? (providedReviews.length > 0 ? "manual" : "playwright"),

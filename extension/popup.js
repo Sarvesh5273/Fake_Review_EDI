@@ -76,7 +76,7 @@ const analyzeReviews = async (apiBaseUrl, reviews, productUrl) => {
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || "Unable to analyze page");
+    throw new Error(data.details || data.error || "Unable to analyze page");
   }
 
   return data;

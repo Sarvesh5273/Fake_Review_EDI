@@ -15,6 +15,7 @@ type ScoreResult = {
   authenticityScore: number;
   confidence: number;
   verdict: string;
+  reviewCount?: number;
   sourceMode: "model" | "manual";
   scrapeMode?: "playwright" | "manual";
   marketplaceHint: {
@@ -152,7 +153,7 @@ export default function QuickCheckPage() {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Unable to analyze reviews.");
+        throw new Error(data.details || data.error || "Unable to analyze reviews.");
       }
 
       setResult(data);
@@ -337,6 +338,12 @@ export default function QuickCheckPage() {
                       <>
                         <br />
                         Scrape mode: <span className="text-white">{result.scrapeMode}</span>
+                      </>
+                    ) : null}
+                    {typeof result.reviewCount === "number" ? (
+                      <>
+                        <br />
+                        Reviews found: <span className="text-white">{result.reviewCount}</span>
                       </>
                     ) : null}
                     <br />
