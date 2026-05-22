@@ -347,8 +347,8 @@ export default function QuickCheckPage() {
                       </>
                     ) : null}
                     <br />
-                    Marketplace: <span className="text-white">{result.marketplaceHint.marketplace}</span>
-                    {result.marketplaceHint.hostname ? ` • ${result.marketplaceHint.hostname}` : ""}
+                    Marketplace: <span className="text-white">{result.marketplaceHint ?? "Unknown"}</span>
+                    {}
                   </div>
                   <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                     <div>
