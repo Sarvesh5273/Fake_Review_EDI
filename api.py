@@ -65,7 +65,7 @@ async def run_quick_check(request: QuickCheckRequest):
         python_script = "src/quick_check_inference.py"
         
         result = subprocess.run(
-            ["python", python_script],
+            ["python3", python_script],
             input=payload,
             text=True,
             capture_output=True,
