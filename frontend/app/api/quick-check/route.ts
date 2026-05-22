@@ -1,3 +1,45 @@
+import { NextResponse } from "next/server";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
+type ReviewInput = {
+  text: string;
+  rating?: number | null;
+  timestamp?: string | null;
+  productId?: string | null;
+};
+
+type QuickCheckResult = {
+  sourceMode: "model" | "manual";
+};
+
+const detectMarketplace = (url?: string) => {
+  if (!url) return null;
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, "");
+    if (hostname.includes("amazon.")) return "Amazon";
+    if (hostname.includes("flipkart.")) return "Flipkart";
+    if (hostname.includes("walmart.")) return "Walmart";
+    if (hostname.includes("shopify.") || hostname.includes("myshopify.com")) return "Shopify";
+    return hostname;
+  } catch {
+    return null;
+  }
+};
+
+const scrapeReviewsFromUrl = async (url: string): Promise<{ reviews: ReviewInput[]; scrapeMode: "firecrawl" | "manual" }> => {
+  const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const response = await fetch(`${base}/api/scrape-page`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+  if (!response.ok) throw new Error("Scrape failed");
+  const data = await response.json();
+  return { reviews: data.reviews ?? [], scrapeMode: "firecrawl" };
+};
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as { reviews?: ReviewInput[]; productUrl?: string };
@@ -13,7 +55,7 @@ export async function POST(request: Request) {
 
     let reviews = providedReviews;
     let sourceMode: QuickCheckResult["sourceMode"] = "model";
-    let scrapeMode: "playwright" | "manual" | undefined;
+    let scrapeMode: "firecrawl" | "manual" | undefined;
 
     if (reviews.length < 3) {
       if (!body.productUrl) {
@@ -35,9 +77,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // ARCHITECTURE FIX: Fetch from FastAPI instead of executing local Python
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-    
+
     try {
       const backendResponse = await fetch(`${apiUrl}/quick-check`, {
         method: "POST",
@@ -50,17 +91,15 @@ export async function POST(request: Request) {
       }
 
       const result = await backendResponse.json();
-      
+
       return NextResponse.json({
         ...result,
         reviewCount: reviews.length,
         marketplaceHint,
         sourceMode,
-        scrapeMode: scrapeMode ?? (providedReviews.length > 0 ? "manual" : "playwright"),
+        scrapeMode: scrapeMode ?? (providedReviews.length > 0 ? "manual" : "firecrawl"),
       });
-      
     } catch (error) {
-      // Graceful fallback if Railway backend is asleep or unreachable
       const manualFallback = {
         aiScore: 0,
         authenticityScore: 0,
@@ -71,7 +110,6 @@ export async function POST(request: Request) {
         signals: { duplicateRatio: 0, shortReviewRatio: 0, ratingSkew: 0, exclamationRatio: 0, repeatedPhraseRatio: 0 },
         warning: "Failed to reach ML backend. Showing placeholder.",
       };
-
       return NextResponse.json({
         ...manualFallback,
         error: "Unable to communicate with the ML API.",
