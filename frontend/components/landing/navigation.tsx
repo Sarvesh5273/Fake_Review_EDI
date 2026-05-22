@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 
 const navLinks = [
   { name: "Home", href: "#" },
+  { name: "Quick Check", href: "/quick-check" },
   { name: "Pricing", href: "#pricing" },
 ];
 

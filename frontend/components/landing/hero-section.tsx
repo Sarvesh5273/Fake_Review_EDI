@@ -195,7 +195,7 @@ export function HeroSection() {
             </span>
           </h1>
         </div>
-        <div className={`flex justify-center sm:justify-start transition-all duration-700 delay-200 ${
+        <div className={`flex flex-col sm:flex-row sm:items-center gap-4 justify-center sm:justify-start transition-all duration-700 delay-200 ${
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         }`}>
           <Button
@@ -204,6 +204,14 @@ export function HeroSection() {
             className="bg-foreground hover:bg-foreground/90 text-background px-8 h-14 text-base rounded-full"
           >
             <a href="/dashboard">Go to Dashboard</a>
+          </Button>
+          <Button
+            asChild
+            size="lg"
+            variant="outline"
+            className="h-14 px-8 text-base rounded-full border-white/30 text-white hover:bg-white/10"
+          >
+            <a href="/quick-check">Quick Check</a>
           </Button>
         </div>
         </div>

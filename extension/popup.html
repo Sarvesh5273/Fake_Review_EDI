@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VertexShield Review Scanner</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div class="brand">VERTEXSHIELD</div>
+        <div class="subtitle">Review Scanner</div>
+      </header>
+
+      <section class="panel">
+        <label for="apiBaseUrl">API base URL</label>
+        <div class="row">
+          <input id="apiBaseUrl" type="url" placeholder="http://localhost:3010" />
+          <button id="saveSettings" type="button">Save</button>
+        </div>
+        <p class="hint">Use the same URL where your VertexShield app is running.</p>
+      </section>
+
+      <section class="panel">
+        <button id="scanPage" class="primary" type="button">Scan current page</button>
+        <div id="pageMeta" class="meta">Waiting for a product page...</div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">Result</div>
+        <div id="status" class="status">Ready.</div>
+        <div id="result" class="result hidden"></div>
+      </section>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
+

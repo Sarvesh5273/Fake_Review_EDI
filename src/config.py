@@ -18,6 +18,8 @@ FINAL_FEATURES_PATH = PROCESSED_DATA_DIR / "final_features.csv"
 
 MODEL_PATH = MODELS_DIR / "random_forest_model.pkl"
 SCALER_PATH = MODELS_DIR / "scaler.pkl"
+CUSTOM_MODEL_PATH = MODELS_DIR / "custom_rf_model.pkl"
+CUSTOM_SCALER_PATH = MODELS_DIR / "custom_scaler.pkl"
 ROC_IMAGE_PATH = ASSETS_DIR / "academic_roc_curve.png"
 
 # Hyperparameters

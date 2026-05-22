@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 interface User {
@@ -16,24 +16,21 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<{ needsEmailVerification: boolean }>;
+  signup: (
+    email: string,
+    password: string,
+    name: string
+  ) => Promise<{ needsEmailVerification: boolean }>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function mapUser(sessionUser: SupabaseUser | null, profile: { name: string | null; role: string | null } | null): User | null {
-  if (!sessionUser) return null;
-
-  return {
-    id: sessionUser.id,
-    email: sessionUser.email ?? "",
-    name: profile?.name ?? (sessionUser.user_metadata?.name as string | undefined) ?? sessionUser.email?.split("@")[0] ?? null,
-    role: profile?.role ?? null,
-  };
-}
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -41,61 +38,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabaseBrowserClient();
 
     const syncSession = async (session: Session | null) => {
+      console.log("SYNC SESSION START");
+
       if (!session?.user) {
+        console.log("NO SESSION USER");
         setUser(null);
         return;
       }
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("name, role")
-        .eq("id", session.user.id)
-        .maybeSingle();
+      console.log("SESSION USER FOUND:", session.user);
 
-      if (error) {
-        console.error("Failed to load profile:", error);
-      }
+      setUser({
+        id: session.user.id,
+        email: session.user.email ?? "",
+        name:
+          (session.user.user_metadata?.name as string | undefined) ??
+          session.user.email?.split("@")[0] ??
+          null,
+        role: null,
+      });
 
-      if (!data) {
-        const { data: inserted, error: insertError } = await supabase
-          .from("profiles")
-          .insert({
-            id: session.user.id,
-            email: session.user.email ?? null,
-            name: (session.user.user_metadata?.name as string | undefined) ?? null,
-          })
-          .select("name, role")
-          .single();
-
-        if (insertError) {
-          console.error("Failed to create profile:", insertError);
-          setUser(mapUser(session.user, null) ?? null);
-          return;
-        }
-
-        setUser(mapUser(session.user, inserted ?? null) ?? null);
-        return;
-      }
-
-      setUser(mapUser(session.user, data ?? null) ?? null);
+      console.log("USER STATE UPDATED");
     };
 
     const init = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("Failed to load session:", error);
+      try {
+        console.log("INIT START");
+
+        const { data, error } = await supabase.auth.getSession();
+
+        console.log("SESSION DATA:", data);
+        console.log("SESSION ERROR:", error);
+
+        await syncSession(data.session);
+      } catch (err) {
+        console.error("INIT ERROR:", err);
+      } finally {
+        console.log("INIT COMPLETE");
+        setIsLoading(false);
       }
-      await syncSession(data.session);
-      setIsLoading(false);
     };
 
     init();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setIsLoading(true);
-      await syncSession(session);
-      setIsLoading(false);
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("AUTH EVENT:", event);
+        console.log("AUTH SESSION:", session);
+
+        try {
+          setIsLoading(true);
+
+          await syncSession(session);
+        } catch (err) {
+          console.error("AUTH STATE ERROR:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    );
 
     return () => {
       listener.subscription.unsubscribe();
@@ -104,48 +105,90 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const supabase = getSupabaseBrowserClient();
-    setIsLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
+    try {
+      console.log("LOGIN START");
+
+      setIsLoading(true);
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      console.log("LOGIN RESPONSE:", data);
+      console.log("LOGIN ERROR:", error);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log("LOGIN SUCCESS");
+
+      window.location.href = "/dashboard";
+    } catch (err) {
+      console.error("LOGIN FAILED:", err);
+      throw err;
+    } finally {
+      console.log("LOGIN FINALLY");
       setIsLoading(false);
-      throw error;
     }
-
-    setIsLoading(false);
   };
 
-  const signup = async (email: string, password: string, name: string) => {
+  const signup = async (
+    email: string,
+    password: string,
+    name: string
+  ) => {
     const supabase = getSupabaseBrowserClient();
-    setIsLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name },
-      },
-    });
+    try {
+      setIsLoading(true);
 
-    if (error) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name },
+        },
+      });
+
+      console.log("SIGNUP RESPONSE:", data);
+      console.log("SIGNUP ERROR:", error);
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        needsEmailVerification: !data.session,
+      };
+    } catch (err) {
+      console.error("SIGNUP FAILED:", err);
+      throw err;
+    } finally {
       setIsLoading(false);
-      throw error;
     }
-
-    const needsEmailVerification = !data.session;
-    setIsLoading(false);
-    return { needsEmailVerification };
   };
 
   const logout = async () => {
     const supabase = getSupabaseBrowserClient();
-    setIsLoading(true);
 
-    const { error } = await supabase.auth.signOut();
-    setIsLoading(false);
+    try {
+      setIsLoading(true);
 
-    if (error) {
-      throw error;
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        throw error;
+      }
+
+      setUser(null);
+    } catch (err) {
+      console.error("LOGOUT FAILED:", err);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -167,8 +210,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
+
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
+
   return context;
 }

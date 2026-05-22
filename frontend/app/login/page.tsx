@@ -27,7 +27,8 @@ export default function LoginPage() {
     setAuthError(null);
     try {
       await login(email, password);
-      router.push("/dashboard");
+      console.log("LOGIN SUCCESS");
+      window.location.href = "/dashboard";
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed. Please try again.";
       setAuthError(message);

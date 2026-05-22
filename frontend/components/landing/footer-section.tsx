@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 const footerLinks = {
   Product: [
     { name: "Agent capabilities", href: "#features" },
+    { name: "Quick Check", href: "/quick-check" },
     { name: "How it works", href: "#how-it-works" },
     { name: "Pricing", href: "#pricing" },
     { name: "Integrations", href: "#integrations" },
