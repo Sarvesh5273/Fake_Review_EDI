@@ -65,12 +65,12 @@ async def run_quick_check(request: QuickCheckRequest):
         python_script = "src/quick_check_inference.py"
         
         result = subprocess.run(
-            ["python3", python_script],
-            input=payload,
-            text=True,
-            capture_output=True,
-            check=True
-        )
+        ["python3", "-m", "src.quick_check_inference"],
+        input=payload,
+        text=True,
+        capture_output=True,
+        check=True
+)
         return json.loads(result.stdout)
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=f"Inference script failed: {e.stderr}")
