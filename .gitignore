@@ -8,8 +8,6 @@ __pycache__/
 venv/
 .env/
 
-# Model files
-*.pkl
 
 # Dataset files
 *.csv
