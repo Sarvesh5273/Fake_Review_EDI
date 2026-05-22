@@ -17,6 +17,7 @@ const setResult = (result) => {
       <div class="label">Verdict</div>
       <div>${result.verdict}</div>
       <div class="small">Source: ${result.sourceMode}</div>
+      <div class="small">Scrape: ${result.scrapeMode ?? "manual"}</div>
       <div class="small">Model: ${result.model?.name ?? "custom_rf_model"}</div>
     </div>
     <div class="score-card">

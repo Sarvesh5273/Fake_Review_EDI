@@ -16,6 +16,7 @@ type ScoreResult = {
   confidence: number;
   verdict: string;
   sourceMode: "model" | "manual";
+  scrapeMode?: "playwright" | "manual";
   marketplaceHint: {
     marketplace: "Amazon" | "Shopify" | "Walmart" | "Unknown";
     hostname: string | null;
@@ -118,6 +119,11 @@ export default function QuickCheckPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reviewCount = useMemo(() => reviews.length, [reviews]);
+  const reviewSourceMode = useMemo(() => {
+    if (reviews.length > 0) return "reviews";
+    if (productUrl.trim()) return "url";
+    return "empty";
+  }, [productUrl, reviews.length]);
   const detectedMarketplace = useMemo(() => {
     if (!productUrl) return null;
     try {
@@ -250,7 +256,7 @@ export default function QuickCheckPage() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm text-white/55">Paste reviews (one per line)</label>
+                  <label className="mb-2 block text-sm text-white/55">Paste reviews (optional if you use a URL)</label>
                   <textarea
                     value={reviewText}
                     onChange={(e) => {
@@ -298,17 +304,18 @@ export default function QuickCheckPage() {
                 </div>
 
                 <div className="text-xs text-white/45">
-                  Reviews detected: <span className="text-white/70">{reviewCount}</span>
+                  Source: <span className="text-white/70">{reviewSourceMode}</span> • Reviews detected:{" "}
+                  <span className="text-white/70">{reviewCount}</span>
                 </div>
 
                 {error && <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
 
                 <Button
                   onClick={handleAnalyze}
-                  disabled={isSubmitting || reviews.length < 3}
+                  disabled={isSubmitting || (!productUrl.trim() && reviews.length < 3)}
                   className="w-full bg-white text-black hover:bg-white/90"
                 >
-                  {isSubmitting ? "Analyzing..." : "Analyze reviews"}
+                  {isSubmitting ? "Analyzing..." : "Analyze url or reviews"}
                   {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
                 </Button>
               </CardContent>
@@ -326,6 +333,12 @@ export default function QuickCheckPage() {
                 <CardContent className="space-y-4">
                   <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/65">
                     Source mode: <span className="text-white">{result.sourceMode}</span>
+                    {result.scrapeMode ? (
+                      <>
+                        <br />
+                        Scrape mode: <span className="text-white">{result.scrapeMode}</span>
+                      </>
+                    ) : null}
                     <br />
                     Marketplace: <span className="text-white">{result.marketplaceHint.marketplace}</span>
                     {result.marketplaceHint.hostname ? ` • ${result.marketplaceHint.hostname}` : ""}

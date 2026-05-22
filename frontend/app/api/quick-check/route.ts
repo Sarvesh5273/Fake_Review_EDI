@@ -56,6 +56,89 @@ const detectMarketplace = (productUrl?: string | null): MarketplaceHint => {
 
 const parsePythonJson = (stdout: string): QuickCheckResult => JSON.parse(stdout) as QuickCheckResult;
 
+const cleanText = (value: string) =>
+  value
+    .replace(/\u00a0/g, " ")
+    .replace(/\s*\n\s*/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+const extractRating = (value: string) => {
+  const ratingMatch = value.match(/([1-5](?:\.\d)?)\s*(?:out of 5|stars?)/i);
+  if (ratingMatch) return Number(ratingMatch[1]);
+
+  const starMatch = value.match(/\b([1-5](?:\.\d)?)\s*★/i);
+  if (starMatch) return Number(starMatch[1]);
+
+  const numericMatch = value.match(/\b([1-5](?:\.\d)?)\b/);
+  if (numericMatch) return Number(numericMatch[1]);
+
+  return undefined;
+};
+
+const extractReviewsFromPageText = (pageText: string, pageUrl: string) => {
+  const lines = pageText
+    .split(/\r?\n/)
+    .map((line) => cleanText(line))
+    .filter(Boolean);
+
+  const reviews: ReviewInput[] = [];
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const next = lines[i + 1] ?? "";
+    const title = lines[i + 2] ?? "";
+    const body = lines[i + 4] ?? "";
+    const structuredRating = line.match(/^\d(?:\.\d)?$/) || line.match(/^\d(?:\.\d)?\s*•\s*.+/);
+
+    if (!structuredRating || next !== "•") continue;
+
+    const reviewText = body || title || lines[i + 3] || "";
+    if (reviewText.length < 10) continue;
+
+    reviews.push({
+      text: reviewText,
+      rating: extractRating(`${line} ${next}`),
+      productId: pageUrl,
+    });
+  }
+
+  const deduped: ReviewInput[] = [];
+  const seen = new Set<string>();
+  for (const review of reviews) {
+    const key = `${review.text.slice(0, 140).toLowerCase()}|${review.rating ?? ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(review);
+  }
+
+  return deduped.slice(0, 20);
+};
+
+const scrapeReviewsFromUrl = async (url: string) => {
+  const { chromium } = await import("playwright");
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1800 } });
+
+  try {
+    await page.goto(url, { waitUntil: "networkidle", timeout: 45000 });
+    await page.waitForTimeout(1500);
+
+    const pageText = await page.locator("body").innerText().catch(() => "");
+    const reviews = extractReviewsFromPageText(pageText, url);
+
+    return {
+      pageTitle: cleanText((await page.title().catch(() => "")) || (await page.locator("h1").first().innerText().catch(() => "")) || "Unknown product"),
+      pageUrl: url,
+      reviews,
+      scrapeMode: "playwright" as const,
+    };
+  } finally {
+    await page.close().catch(() => undefined);
+    await browser.close().catch(() => undefined);
+  }
+};
+
 const getPythonBinary = () => {
   const candidates = [
     process.env.PYTHON_BIN && resolve(process.cwd(), process.env.PYTHON_BIN),
@@ -72,7 +155,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as { reviews?: ReviewInput[]; productUrl?: string };
     const marketplaceHint = detectMarketplace(body.productUrl);
-    const reviews = (body.reviews ?? [])
+    const providedReviews = (body.reviews ?? [])
       .filter((review) => review.text && review.text.trim().length > 0)
       .map((review) => ({
         text: review.text.trim(),
@@ -81,10 +164,32 @@ export async function POST(request: Request) {
         productId: review.productId ?? null,
       }));
 
+    let reviews = providedReviews;
+    let sourceMode: QuickCheckResult["sourceMode"] = "model";
+    let scrapeMode: "playwright" | "manual" | undefined;
+
+    if (reviews.length < 3) {
+      if (!body.productUrl) {
+        return NextResponse.json(
+          {
+            error: "Provide at least 3 reviews or a product URL to analyze.",
+            marketplaceHint,
+            sourceMode: "manual",
+          },
+          { status: 400 }
+        );
+      }
+
+      const scraped = await scrapeReviewsFromUrl(body.productUrl);
+      reviews = scraped.reviews;
+      scrapeMode = scraped.scrapeMode;
+      sourceMode = "model";
+    }
+
     if (reviews.length < 3) {
       return NextResponse.json(
         {
-          error: "Provide at least 3 reviews to analyze.",
+          error: "Unable to extract at least 3 reviews from the provided URL.",
           marketplaceHint,
           sourceMode: "manual",
         },
@@ -109,7 +214,12 @@ export async function POST(request: Request) {
       });
 
       const result = parsePythonJson(stdout);
-      return NextResponse.json({ ...result, marketplaceHint });
+      return NextResponse.json({
+        ...result,
+        marketplaceHint,
+        sourceMode,
+        scrapeMode: scrapeMode ?? (providedReviews.length > 0 ? "manual" : "playwright"),
+      });
     } catch (error) {
       const manualFallback = {
         aiScore: 0,
