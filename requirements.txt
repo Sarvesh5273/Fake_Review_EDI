@@ -9,7 +9,7 @@ pandas>=2.2
 scikit-learn>=1.5
 matplotlib>=3.9
 scipy>=1.14
-torch==2.4.0+cpu
+torch==2.6.0+cpu
 tqdm>=4.66
 sentence-transformers>=3.0
 openpyxl>=3.1
