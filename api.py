@@ -3,16 +3,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
 import logging
+import os
+import subprocess
+import json
 
 from src.config import MODEL_PATH, SCALER_PATH
 from src.inference import get_threat_features
 
 app = FastAPI(title="BrandShield AI API")
 
-# Allow the Next.js frontend to communicate with this backend
+# Dynamically handle CORS. Defaulting to '*' to unblock your deployment.
+# For production, set the ALLOWED_ORIGINS env var in Railway to your Vercel domain.
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,11 +41,8 @@ async def analyze_threat(request: ThreatRequest):
         raise HTTPException(status_code=500, detail="ML model is not loaded on the server.")
         
     try:
-        # Extract features for the requested Node ID
         live_features = get_threat_features(request.node_id)
         transformed_features = scaler.transform(live_features)
-        
-        # Calculate Bipartite Graph Threat Probability
         threat_probability = float(model.predict_proba(transformed_features)[0, 1])
         
         return {
@@ -49,3 +52,27 @@ async def analyze_threat(request: ThreatRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# NEW ENDPOINT: Shifted from Next.js to FastAPI
+class QuickCheckRequest(BaseModel):
+    reviews: list
+
+@app.post("/quick-check")
+async def run_quick_check(request: QuickCheckRequest):
+    try:
+        payload = json.dumps({"reviews": request.reviews})
+        # Railway has the Python environment to execute this safely
+        python_script = "src/quick_check_inference.py"
+        
+        result = subprocess.run(
+            ["python", python_script],
+            input=payload,
+            text=True,
+            capture_output=True,
+            check=True
+        )
+        return json.loads(result.stdout)
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=f"Inference script failed: {e.stderr}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
